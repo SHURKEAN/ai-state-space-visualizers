@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive 4 Queen Logic</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #20242a;
+            color: #f7efe1;
+            font-family: Arial, sans-serif;
+        }
+
+        main {
+            width: min(1180px, 94vw);
+            min-height: 100vh;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: minmax(320px, 470px) minmax(320px, 1fr);
+            gap: 28px;
+            align-items: center;
+            padding: 28px 0;
+        }
+
+        .page {
+            width: min(1180px, 94vw);
+            margin: 0 auto;
+            padding-bottom: 32px;
+        }
+
+        .board-panel {
+            display: grid;
+            gap: 16px;
+        }
+
+        .board-wrap {
+            padding: 20px;
+            background: #7b4d27;
+            border: 12px solid #3b220f;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.48);
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: 34px repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr) 34px;
+            aspect-ratio: 1;
+            border: 4px solid #251408;
+            background: #251408;
+        }
+
+        .square,
+        .label,
+        .corner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .square {
+            position: relative;
+            border: 0;
+            min-width: 0;
+            min-height: 0;
+            color: #12100c;
+            font: 800 clamp(24px, 6vw, 48px) / 1 Arial, sans-serif;
+            cursor: pointer;
+        }
+
+        .square:focus-visible {
+            outline: 4px solid #7fd1ff;
+            outline-offset: -5px;
+            z-index: 2;
+        }
+
+        .square:hover {
+            filter: brightness(1.08);
+        }
+
+        .light {
+            background: #efd4a4;
+        }
+
+        .dark {
+            background: #8c5a2c;
+        }
+
+        .square span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .attacked::after,
+        .queen::after,
+        .selected::before {
+            content: "";
+            position: absolute;
+            border-radius: 50%;
+        }
+
+        .attacked::after {
+            inset: 13%;
+            background: rgba(190, 43, 43, 0.82);
+            box-shadow: inset 0 0 0 4px rgba(255, 238, 210, 0.28);
+        }
+
+        .queen::after {
+            inset: 9%;
+            background: #f5cf45;
+            box-shadow: inset 0 0 0 4px rgba(40, 24, 8, 0.35);
+        }
+
+        .selected::before {
+            inset: 5%;
+            border: 4px solid #7fd1ff;
+            z-index: 2;
+        }
+
+        .label {
+            color: #f3dfbf;
+            background: #3b220f;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .corner {
+            background: #3b220f;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .control-button {
+            border: 1px solid rgba(247, 239, 225, 0.28);
+            background: #303841;
+            color: #f7efe1;
+            border-radius: 8px;
+            padding: 11px 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .control-button:hover {
+            background: #3c4652;
+        }
+
+        .side {
+            display: grid;
+            gap: 16px;
+        }
+
+        .title h1 {
+            margin: 0 0 8px;
+            font-size: clamp(30px, 5vw, 46px);
+            line-height: 1.05;
+        }
+
+        .title p {
+            margin: 0;
+            color: #d7cdbc;
+            font-size: 18px;
+            line-height: 1.45;
+        }
+
+        .panel {
+            border: 1px solid rgba(247, 239, 225, 0.16);
+            border-radius: 8px;
+            background: #2a3037;
+            padding: 16px;
+        }
+
+        .panel h2 {
+            margin: 0 0 12px;
+            font-size: 19px;
+        }
+
+        .status {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .stat {
+            border-radius: 8px;
+            background: #20262d;
+            padding: 12px;
+        }
+
+        .stat strong {
+            display: block;
+            font-size: 24px;
+            color: #ffe08a;
+        }
+
+        .stat span {
+            color: #d7cdbc;
+            font-size: 13px;
+        }
+
+        .code {
+            margin: 0;
+            overflow-x: auto;
+            white-space: pre;
+            color: #dbe7f3;
+            font: 15px / 1.5 Consolas, "Courier New", monospace;
+        }
+
+        .code-line {
+            display: block;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .code-line.active {
+            background: #4f3e19;
+            color: #fff2b8;
+        }
+
+        .explanation {
+            min-height: 142px;
+            color: #f0e5d3;
+            font-size: 17px;
+            line-height: 1.48;
+        }
+
+        .explanation strong {
+            color: #ffe08a;
+        }
+
+        .matrix {
+            margin: 0;
+            color: #dbe7f3;
+            font: 16px / 1.45 Consolas, "Courier New", monospace;
+            white-space: pre;
+        }
+
+        .legend {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .legend-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            color: #d7cdbc;
+        }
+
+        .key {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            flex: 0 0 auto;
+        }
+
+        .key-queen {
+            background: #f5cf45;
+        }
+
+        .key-attack {
+            background: #be2b2b;
+        }
+
+        .key-safe {
+            background: #efd4a4;
+        }
+
+        code {
+            color: #ffe08a;
+            font-size: 0.95em;
+        }
+
+        .walkthrough {
+            display: grid;
+            gap: 16px;
+            margin-top: 8px;
+        }
+
+        .walkthrough-header {
+            margin: 0 0 4px;
+            font-size: clamp(26px, 4vw, 38px);
+        }
+
+        details.panel {
+            padding: 0;
+            overflow: hidden;
+        }
+
+        summary {
+            cursor: pointer;
+            padding: 16px;
+            font-size: 19px;
+            font-weight: 800;
+            list-style-position: inside;
+        }
+
+        .detail-body {
+            display: grid;
+            gap: 12px;
+            border-top: 1px solid rgba(247, 239, 225, 0.16);
+            padding: 16px;
+            color: #f0e5d3;
+            font-size: 17px;
+            line-height: 1.5;
+        }
+
+        .detail-body p {
+            margin: 0;
+        }
+
+        .detail-body ul {
+            margin: 0;
+            padding-left: 22px;
+        }
+
+        .detail-body li {
+            margin: 6px 0;
+        }
+
+        .mini-code {
+            margin: 0;
+            overflow-x: auto;
+            border-radius: 8px;
+            background: #1f252c;
+            padding: 12px;
+            color: #dbe7f3;
+            font: 14px / 1.5 Consolas, "Courier New", monospace;
+        }
+
+        @media (max-width: 860px) {
+            main {
+                grid-template-columns: 1fr;
+                align-items: start;
+            }
+
+            .status,
+            .legend {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 470px) {
+            .board-wrap {
+                padding: 12px;
+                border-width: 9px;
+            }
+
+            .board {
+                grid-template-columns: 28px repeat(4, 1fr);
+                grid-template-rows: repeat(4, 1fr) 28px;
+            }
+
+            .label {
+                font-size: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <main>
+            <section class="board-panel">
+                <div class="board-wrap">
+                    <div class="board" id="board" aria-label="Interactive 4 by 4 queen board"></div>
+                </div>
+
+                <div class="controls">
+                    <button class="control-button" id="prevButton" type="button">Previous square</button>
+                    <button class="control-button" id="nextButton" type="button">Next square</button>
+                    <button class="control-button" id="resetButton" type="button">Reset to row 4, column 4</button>
+                </div>
+            </section>
+
+            <section class="side">
+                <div class="title">
+                    <h1>Interactive 4 Queen Logic</h1>
+                    <p>Click any square. The page runs the same idea as your Python code and marks the queen as <code>1</code>, attacked squares as <code>2</code>, and safe squares as <code>0</code>.</p>
+                </div>
+
+                <section class="panel">
+                    <h2>Current Action</h2>
+                    <div class="status">
+                        <div class="stat"><strong id="actionText">o 4 4</strong><span>action string</span></div>
+                        <div class="stat"><strong id="pythonIndexText">i=3 j=3</strong><span>Python indexes</span></div>
+                        <div class="stat"><strong id="selectedText">l=3 k=3</strong><span>selected square</span></div>
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <h2>Code Being Explained</h2>
+                    <pre class="code"><span class="code-line" id="lineQueen">if l == i and k == j:</span><span class="code-line" id="lineSetQueen">    new_state[l][k] = 1</span><span class="code-line" id="lineAttack">elif (l == i or k == j or abs(i - l) == abs(j - k)):</span><span class="code-line" id="lineSetAttack">    new_state[l][k] = 2</span><span class="code-line" id="lineSafe">else: leave it as 0</span></pre>
+                </section>
+
+                <section class="panel">
+                    <h2>Why This Square Has This Value</h2>
+                    <div class="explanation" id="explanation"></div>
+                </section>
+
+                <section class="panel">
+                    <h2>Tuple State</h2>
+                    <pre class="matrix" id="matrixText"></pre>
+                </section>
+
+                <section class="panel">
+                    <h2>Legend</h2>
+                    <div class="legend">
+                        <div class="legend-row"><span class="key key-queen"></span><span><code>1</code> queen</span></div>
+                        <div class="legend-row"><span class="key key-attack"></span><span><code>2</code> attacked</span></div>
+                        <div class="legend-row"><span class="key key-safe"></span><span><code>0</code> safe</span></div>
+                    </div>
+                </section>
+            </section>
+        </main>
+
+        <section class="walkthrough" aria-label="Detailed code walkthrough">
+            <h2 class="walkthrough-header">Detailed Code Walkthrough</h2>
+
+            <details class="panel" open>
+                <summary>1. What the board numbers mean</summary>
+                <div class="detail-body">
+                    <p>The code represents the 4 by 4 board as a tuple of tuples. Each number has a meaning.</p>
+                    <ul>
+                        <li><code>0</code> means empty and still safe.</li>
+                        <li><code>1</code> means a queen is placed there.</li>
+                        <li><code>2</code> means the square is attacked, so another queen should not be placed there.</li>
+                    </ul>
+                    <pre class="mini-code">((0, 0, 0, 0),
+ (0, 0, 0, 0),
+ (0, 0, 0, 0),
+ (0, 0, 0, 0))</pre>
+                </div>
+            </details>
+
+            <details class="panel">
+                <summary>2. __init__: starting state</summary>
+                <div class="detail-body">
+                    <p><code>__init__</code> creates the first state of the problem. For this problem, the first state is an empty board.</p>
+                    <pre class="mini-code">def __init__(self):
+    super().__init__(((0, 0, 0, 0),
+                      (0, 0, 0, 0),
+                      (0, 0, 0, 0),
+                      (0, 0, 0, 0)))</pre>
+                    <p><code>super().__init__(...)</code> sends that initial board to the general <code>Problem</code> class from <code>search.py</code>.</p>
+                </div>
+            </details>
+
+            <details class="panel">
+                <summary>3. actions: finding possible moves</summary>
+                <div class="detail-body">
+                    <p><code>actions</code> loops through every square. If the square is <code>0</code>, it creates an action for that position.</p>
+                    <pre class="mini-code">def actions(self, state):
+    acts = []
+    for i in range(4):
+        for j in range(4):
+            if state[i][j] == 0:
+                acts.append("o {} {}".format(i + 1, j + 1))
+    return acts</pre>
+                    <p>The code uses <code>i + 1</code> and <code>j + 1</code> because humans count rows and columns as <code>1, 2, 3, 4</code>, but Python counts indexes as <code>0, 1, 2, 3</code>.</p>
+                    <p>On an empty board there are <code>16</code> possible actions because <code>4 * 4 = 16</code>.</p>
+                </div>
+            </details>
+
+            <details class="panel">
+                <summary>4. result: placing a queen and marking attacks</summary>
+                <div class="detail-body">
+                    <p><code>result</code> takes a state and an action, then returns the new board after that action.</p>
+                    <pre class="mini-code">i, j = int(action.split(' ')[1]) - 1, int(action.split(' ')[2]) - 1</pre>
+                    <p>This reads an action like <code>"o 4 4"</code>. It converts it to Python indexes, so row <code>4</code>, column <code>4</code> becomes <code>i = 3</code>, <code>j = 3</code>.</p>
+                    <pre class="mini-code">new_state = convert_state_to_list(state)</pre>
+                    <p>The board starts as tuples, but tuples cannot be changed. So the code converts the board to lists before editing it.</p>
+                    <pre class="mini-code">if l == i and k == j:
+    new_state[l][k] = 1
+elif (l == i or k == j or abs(i - l) == abs(j - k)):
+    new_state[l][k] = 2</pre>
+                    <p>The first condition places the queen. The second condition marks attacked squares: same row, same column, or same diagonal.</p>
+                </div>
+            </details>
+
+            <details class="panel">
+                <summary>5. The diagonal formula</summary>
+                <div class="detail-body">
+                    <p>This is the diagonal check:</p>
+                    <pre class="mini-code">abs(i - l) == abs(j - k)</pre>
+                    <p>Two squares are on the same diagonal when the row distance and column distance are equal.</p>
+                    <p>Example: queen at row <code>4</code>, column <code>4</code>. The square row <code>2</code>, column <code>2</code> is diagonal because the row difference is <code>2</code> and the column difference is also <code>2</code>.</p>
+                    <pre class="mini-code">abs(3 - 1) == abs(3 - 1)
+2 == 2</pre>
+                </div>
+            </details>
+
+            <details class="panel">
+                <summary>6. goal_test: checking if the board is solved</summary>
+                <div class="detail-body">
+                    <p><code>goal_test</code> checks whether every row has at least one queen.</p>
+                    <pre class="mini-code">def goal_test(self, state):
+    bool_state = convert_state_to_list(state)
+
+    for i in range(4):
+        for j in range(4):
+            bool_state[i][j] = state[i][j] == 1
+
+    return all([any(bool_state[i]) for i in range(4)])</pre>
+                    <p><code>state[i][j] == 1</code> becomes <code>True</code> if there is a queen and <code>False</code> if there is not.</p>
+                    <p><code>any(bool_state[i])</code> means “does this row contain at least one queen?”</p>
+                    <p><code>all(...)</code> means “do all four rows contain a queen?”</p>
+                </div>
+            </details>
+
+            <details class="panel">
+                <summary>7. main: testing the methods</summary>
+                <div class="detail-body">
+                    <p><code>main</code> is not the search logic itself. It is there to test the class methods and print examples.</p>
+                    <ul>
+                        <li><code>print(len(f_queen.actions(my_state)))</code> prints <code>16</code> on the empty board.</li>
+                        <li><code>print_matrix(f_queen.result(my_state, "o 4 4"))</code> shows what happens after placing a queen at row <code>4</code>, column <code>4</code>.</li>
+                        <li><code>print(f_queen.goal_test(my_goal_state))</code> checks if the example board has one queen in every row.</li>
+                        <li><code>Trial_Error(f_queen)</code> tries to solve the problem using the search method from your library.</li>
+                    </ul>
+                </div>
+            </details>
+        </section>
+    </div>
+
+    <script>
+        const board = document.getElementById("board");
+        const actionText = document.getElementById("actionText");
+        const pythonIndexText = document.getElementById("pythonIndexText");
+        const selectedText = document.getElementById("selectedText");
+        const explanation = document.getElementById("explanation");
+        const matrixText = document.getElementById("matrixText");
+        const prevButton = document.getElementById("prevButton");
+        const nextButton = document.getElementById("nextButton");
+        const resetButton = document.getElementById("resetButton");
+        const codeLines = {
+            queen: document.getElementById("lineQueen"),
+            setQueen: document.getElementById("lineSetQueen"),
+            attack: document.getElementById("lineAttack"),
+            setAttack: document.getElementById("lineSetAttack"),
+            safe: document.getElementById("lineSafe")
+        };
+
+        let queenRow = 3;
+        let queenCol = 3;
+        let selectedRow = 3;
+        let selectedCol = 3;
+        const squares = [];
+
+        function addLabel(text) {
+            const label = document.createElement("div");
+            label.className = "label";
+            label.textContent = text;
+            board.appendChild(label);
+        }
+
+        function addSquare(row, col) {
+            const square = document.createElement("button");
+            square.type = "button";
+            square.className = ((row + col) % 2 === 0 ? "light" : "dark") + " square";
+            square.dataset.row = row;
+            square.dataset.col = col;
+            square.addEventListener("click", () => {
+                queenRow = row;
+                queenCol = col;
+                selectedRow = row;
+                selectedCol = col;
+                render();
+            });
+            square.addEventListener("mouseenter", () => {
+                selectedRow = row;
+                selectedCol = col;
+                render();
+            });
+            board.appendChild(square);
+            squares.push(square);
+        }
+
+        function buildBoard() {
+            for (let row = 0; row < 4; row++) {
+                addLabel(String(row + 1));
+                for (let col = 0; col < 4; col++) {
+                    addSquare(row, col);
+                }
+            }
+
+            const corner = document.createElement("div");
+            corner.className = "corner";
+            board.appendChild(corner);
+
+            for (let col = 0; col < 4; col++) {
+                addLabel(String(col + 1));
+            }
+        }
+
+        function squareValue(row, col) {
+            if (row === queenRow && col === queenCol) {
+                return 1;
+            }
+
+            if (row === queenRow || col === queenCol || Math.abs(queenRow - row) === Math.abs(queenCol - col)) {
+                return 2;
+            }
+
+            return 0;
+        }
+
+        function reasonFor(row, col) {
+            if (row === queenRow && col === queenCol) {
+                return {
+                    kind: "queen",
+                    text: `<strong>This is the queen square.</strong><br>Here <code>l == i</code> and <code>k == j</code>, so the first <code>if</code> is true. The code writes <code>1</code> into this position.`
+                };
+            }
+
+            const reasons = [];
+            if (row === queenRow) {
+                reasons.push("<code>l == i</code>, same row");
+            }
+            if (col === queenCol) {
+                reasons.push("<code>k == j</code>, same column");
+            }
+            if (Math.abs(queenRow - row) === Math.abs(queenCol - col)) {
+                reasons.push("<code>abs(i - l) == abs(j - k)</code>, same diagonal");
+            }
+
+            if (reasons.length > 0) {
+                return {
+                    kind: "attack",
+                    text: `<strong>This square is attacked.</strong><br>${reasons.join("<br>")}<br>The <code>elif</code> is true, so the code writes <code>2</code>.`
+                };
+            }
+
+            return {
+                kind: "safe",
+                text: `<strong>This square is still safe.</strong><br>It is not the queen square, not the same row, not the same column, and not on the same diagonal. So it stays <code>0</code>.`
+            };
+        }
+
+        function formatMatrix() {
+            const rows = [];
+            for (let row = 0; row < 4; row++) {
+                const values = [];
+                for (let col = 0; col < 4; col++) {
+                    values.push(squareValue(row, col));
+                }
+                rows.push("(" + values.join(", ") + ")");
+            }
+            return "(" + rows.join(",\n ") + ")";
+        }
+
+        function setActiveLines(kind) {
+            Object.values(codeLines).forEach((line) => line.classList.remove("active"));
+
+            if (kind === "queen") {
+                codeLines.queen.classList.add("active");
+                codeLines.setQueen.classList.add("active");
+            } else if (kind === "attack") {
+                codeLines.attack.classList.add("active");
+                codeLines.setAttack.classList.add("active");
+            } else {
+                codeLines.safe.classList.add("active");
+            }
+        }
+
+        function render() {
+            squares.forEach((square) => {
+                const row = Number(square.dataset.row);
+                const col = Number(square.dataset.col);
+                const value = squareValue(row, col);
+                square.className = ((row + col) % 2 === 0 ? "light" : "dark") + " square";
+                square.innerHTML = value === 0 ? "" : `<span>${value}</span>`;
+                square.setAttribute("aria-label", `row ${row + 1}, column ${col + 1}, value ${value}`);
+
+                if (value === 1) {
+                    square.classList.add("queen");
+                } else if (value === 2) {
+                    square.classList.add("attacked");
+                }
+
+                if (row === selectedRow && col === selectedCol) {
+                    square.classList.add("selected");
+                }
+            });
+
+            actionText.textContent = `o ${queenRow + 1} ${queenCol + 1}`;
+            pythonIndexText.textContent = `i=${queenRow} j=${queenCol}`;
+            selectedText.textContent = `l=${selectedRow} k=${selectedCol}`;
+
+            const currentReason = reasonFor(selectedRow, selectedCol);
+            explanation.innerHTML = currentReason.text;
+            matrixText.textContent = formatMatrix();
+            setActiveLines(currentReason.kind);
+        }
+
+        function moveSelected(direction) {
+            let position = selectedRow * 4 + selectedCol;
+            position = (position + direction + 16) % 16;
+            selectedRow = Math.floor(position / 4);
+            selectedCol = position % 4;
+            render();
+        }
+
+        prevButton.addEventListener("click", () => moveSelected(-1));
+        nextButton.addEventListener("click", () => moveSelected(1));
+        resetButton.addEventListener("click", () => {
+            queenRow = 3;
+            queenCol = 3;
+            selectedRow = 3;
+            selectedCol = 3;
+            render();
+        });
+
+        buildBoard();
+        render();
+    </script>
+</body>
+</html>

@@ -5,956 +5,154 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI State Space Visualizers</title>
   <style>
-    :root {
-      --bg: #f5f7fb;
-      --panel: #ffffff;
-      --ink: #1f2937;
-      --muted: #64748b;
-      --line: #d8deea;
-      --accent: #2563eb;
-      --accent-dark: #1747b8;
-      --good: #15803d;
-      --bad: #c2410c;
-      --code-bg: #0f172a;
-      --code-ink: #bfdbfe;
-      --queen-light: #efd4a4;
-      --queen-dark: #8c5a2c;
-      --wood: #8b5e34;
-      --tower: #4b5563;
-      --disk1: #e84a5f;
-      --disk2: #f59e0b;
-      --disk3: #14b8a6;
-    }
-
     * {
       box-sizing: border-box;
     }
 
+    html,
     body {
       margin: 0;
+      min-height: 100%;
+    }
+
+    body {
+      display: grid;
+      grid-template-rows: auto 1fr;
       min-height: 100vh;
-      background: var(--bg);
-      color: var(--ink);
+      background: #20242a;
+      color: #f7efe1;
       font-family: Arial, Helvetica, sans-serif;
     }
 
-    main {
-      width: min(1180px, calc(100% - 28px));
-      margin: 0 auto;
-      padding: 24px 0 36px;
-    }
-
-    header {
+    .switcher {
+      position: sticky;
+      top: 0;
+      z-index: 10;
       display: flex;
-      align-items: end;
+      align-items: center;
       justify-content: space-between;
-      gap: 18px;
-      margin-bottom: 14px;
+      gap: 16px;
+      padding: 10px max(14px, 3vw);
+      border-bottom: 1px solid rgba(247, 239, 225, 0.16);
+      background: #20242a;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
     }
 
-    h1,
-    h2,
-    p {
-      margin-top: 0;
-    }
-
-    h1 {
-      margin-bottom: 6px;
-      font-size: clamp(28px, 5vw, 42px);
-      line-height: 1.05;
-    }
-
-    .subtitle {
-      max-width: 760px;
-      margin-bottom: 0;
-      color: var(--muted);
-      font-size: 16px;
-      line-height: 1.45;
+    .brand {
+      min-width: 0;
+      font-size: 18px;
+      font-weight: 800;
+      white-space: nowrap;
     }
 
     .tabs {
       display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
       gap: 8px;
-      padding: 6px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--panel);
     }
 
     .tab {
       min-height: 40px;
-      border: 0;
-      border-radius: 6px;
-      background: transparent;
-      color: var(--muted);
+      border: 1px solid rgba(247, 239, 225, 0.28);
+      border-radius: 8px;
+      background: #303841;
+      color: #f7efe1;
       font: inherit;
       font-weight: 700;
       padding: 0 14px;
       cursor: pointer;
+    }
+
+    .tab:hover {
+      background: #3c4652;
     }
 
     .tab.active {
-      background: var(--accent);
-      color: #ffffff;
+      border-color: #ffe08a;
+      background: #4f3e19;
+      color: #fff2b8;
     }
 
-    .lesson {
+    .viewer {
       display: none;
-    }
-
-    .lesson.active {
-      display: block;
-    }
-
-    .workspace {
-      display: grid;
-      grid-template-columns: minmax(320px, 470px) minmax(320px, 1fr);
-      gap: 18px;
-      align-items: start;
-      margin-top: 18px;
-    }
-
-    .panel {
-      min-width: 0;
-      padding: 16px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--panel);
-      box-shadow: 0 12px 34px rgba(30, 41, 59, 0.06);
-    }
-
-    .panel h2 {
-      margin-bottom: 10px;
-      font-size: 18px;
-    }
-
-    button {
-      min-height: 40px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--panel);
-      color: var(--ink);
-      font: inherit;
-      font-weight: 700;
-      padding: 0 14px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      border-color: #9aa8c1;
-    }
-
-    button.primary {
-      border-color: var(--accent);
-      background: var(--accent);
-      color: #ffffff;
-    }
-
-    button.primary:hover {
-      background: var(--accent-dark);
-    }
-
-    code,
-    pre {
-      font-family: Consolas, Monaco, "Courier New", monospace;
-    }
-
-    code {
-      color: var(--accent-dark);
-      font-size: 0.95em;
-    }
-
-    pre {
-      margin: 0;
-      overflow-x: auto;
-      border-radius: 8px;
-      background: var(--code-bg);
-      color: var(--code-ink);
-      font-size: 13px;
-      line-height: 1.55;
-      white-space: pre-wrap;
-      padding: 12px;
-    }
-
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 12px;
-    }
-
-    .status {
-      min-height: 48px;
-      margin-top: 12px;
-      padding: 12px 14px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      color: var(--muted);
-      line-height: 1.45;
-    }
-
-    .status.good {
-      border-color: #86efac;
-      color: var(--good);
-      background: #f0fdf4;
-    }
-
-    .status.bad {
-      border-color: #fdba74;
-      color: var(--bad);
-      background: #fff7ed;
-    }
-
-    .debug-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      gap: 12px;
-    }
-
-    .notes {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
-      margin-top: 12px;
-    }
-
-    .note {
-      padding: 12px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: #f8fafc;
-      color: var(--muted);
-      line-height: 1.45;
-    }
-
-    .note strong {
-      display: block;
-      margin-bottom: 5px;
-      color: var(--ink);
-    }
-
-    .queen-board-wrap {
-      padding: 18px;
-      border: 10px solid #3b220f;
-      background: #7b4d27;
-    }
-
-    .queen-board {
-      display: grid;
-      grid-template-columns: 32px repeat(4, 1fr);
-      grid-template-rows: repeat(4, 1fr) 32px;
-      aspect-ratio: 1;
-      border: 4px solid #251408;
-      background: #251408;
-    }
-
-    .queen-square,
-    .queen-label,
-    .queen-corner {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .queen-square {
-      position: relative;
+      width: 100%;
+      height: calc(100vh - 61px);
       border: 0;
-      min-width: 0;
-      min-height: 0;
-      color: #12100c;
-      font: 800 clamp(24px, 6vw, 48px) / 1 Arial, sans-serif;
-      cursor: pointer;
-    }
-
-    .queen-light {
-      background: var(--queen-light);
-    }
-
-    .queen-dark {
-      background: var(--queen-dark);
-    }
-
-    .queen-label,
-    .queen-corner {
-      background: #3b220f;
-      color: #f3dfbf;
-      font-weight: 700;
-    }
-
-    .queen-square::after,
-    .queen-square::before {
-      content: "";
-      position: absolute;
-      border-radius: 50%;
-    }
-
-    .queen-square.attack::after {
-      inset: 13%;
-      background: rgba(190, 43, 43, 0.82);
-    }
-
-    .queen-square.queen::after {
-      inset: 9%;
-      background: #f5cf45;
-      box-shadow: inset 0 0 0 4px rgba(40, 24, 8, 0.35);
-    }
-
-    .queen-square.selected::before {
-      inset: 5%;
-      border: 4px solid #38bdf8;
-      z-index: 2;
-    }
-
-    .queen-square span {
-      position: relative;
-      z-index: 1;
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-
-    .stat {
-      padding: 10px;
-      border-radius: 8px;
-      background: #f8fafc;
-    }
-
-    .stat strong {
-      display: block;
-      font-size: 20px;
-      color: var(--accent-dark);
-    }
-
-    .stat span {
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .hanoi-board {
-      position: relative;
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
-      min-height: 330px;
-      padding: 18px 14px 28px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
       background: #ffffff;
     }
 
-    .tower {
-      position: relative;
-      display: flex;
-      min-width: 0;
-      min-height: 280px;
-      align-items: center;
-      justify-content: flex-end;
-      flex-direction: column;
-      padding: 0 6px 22px;
-      border: 2px solid transparent;
-      border-radius: 8px;
-      cursor: pointer;
+    .viewer.active {
+      display: block;
     }
 
-    .tower:hover {
-      border-color: #b8c4da;
-      background: #f8fafc;
-    }
+    @media (max-width: 620px) {
+      .switcher {
+        align-items: stretch;
+        flex-direction: column;
+      }
 
-    .tower.selected {
-      border-color: var(--accent);
-      background: #eff6ff;
-    }
-
-    .tower::before {
-      content: "";
-      position: absolute;
-      bottom: 58px;
-      left: 50%;
-      width: 14px;
-      height: 190px;
-      transform: translateX(-50%);
-      border-radius: 7px 7px 0 0;
-      background: var(--tower);
-    }
-
-    .tower::after {
-      content: "";
-      position: absolute;
-      right: 10%;
-      bottom: 44px;
-      left: 10%;
-      height: 18px;
-      border-radius: 8px;
-      background: var(--wood);
-    }
-
-    .disk {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 34px;
-      margin-bottom: 5px;
-      border-radius: 8px;
-      color: #ffffff;
-      font-weight: 700;
-      text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
-      box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.14);
-      user-select: none;
-    }
-
-    .disk.size-1 {
-      width: 34%;
-      background: var(--disk1);
-    }
-
-    .disk.size-2 {
-      width: 54%;
-      background: var(--disk2);
-    }
-
-    .disk.size-3 {
-      width: 76%;
-      background: var(--disk3);
-    }
-
-    .tower-name {
-      position: absolute;
-      right: 0;
-      bottom: 0;
-      left: 0;
-      color: var(--muted);
-      font-size: 14px;
-      font-weight: 700;
-      text-align: center;
-    }
-
-    @media (max-width: 880px) {
-      header,
-      .workspace {
-        display: block;
+      .brand {
+        white-space: normal;
       }
 
       .tabs {
-        margin-top: 14px;
+        justify-content: stretch;
       }
 
-      .workspace > * + * {
-        margin-top: 14px;
+      .tab {
+        flex: 1 1 150px;
       }
 
-      .debug-grid,
-      .notes {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    @media (max-width: 520px) {
-      main {
-        width: min(100% - 18px, 1180px);
-      }
-
-      .tabs {
-        display: grid;
-        grid-template-columns: 1fr;
-      }
-
-      .queen-board-wrap {
-        padding: 10px;
-        border-width: 8px;
-      }
-
-      .queen-board {
-        grid-template-columns: 28px repeat(4, 1fr);
-        grid-template-rows: repeat(4, 1fr) 28px;
-      }
-
-      .stats {
-        grid-template-columns: 1fr;
-      }
-
-      .hanoi-board {
-        gap: 8px;
-        padding-inline: 8px;
-      }
-
-      .tower {
-        min-height: 255px;
-        padding-inline: 3px;
-      }
-
-      .disk.size-1 {
-        width: 46%;
-      }
-
-      .disk.size-2 {
-        width: 66%;
-      }
-
-      .disk.size-3 {
-        width: 88%;
+      .viewer {
+        height: calc(100vh - 112px);
       }
     }
   </style>
 </head>
 <body>
-  <main>
-    <header>
-      <div>
-        <h1>AI State Space Visualizers</h1>
-        <p class="subtitle">One page for the 4 Queens and Tower of Hanoi examples, with the code-style state, actions, and result logic shown as you interact.</p>
-      </div>
-      <nav class="tabs" aria-label="Visualizer tabs">
-        <button class="tab active" data-tab="queens" type="button">4 Queens</button>
-        <button class="tab" data-tab="hanoi" type="button">Tower of Hanoi</button>
-      </nav>
-    </header>
+  <nav class="switcher" aria-label="Visualizer switcher">
+    <div class="brand">AI State Space Visualizers</div>
+    <div class="tabs" role="tablist" aria-label="Choose a visualizer">
+      <button class="tab active" type="button" role="tab" aria-selected="true" aria-controls="queenFrame" data-target="queen">4 Queen Visual</button>
+      <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="hanoiFrame" data-target="hanoi">Hanoi Visual</button>
+    </div>
+  </nav>
 
-    <section class="lesson active" id="queensLesson">
-      <div class="workspace">
-        <section class="panel">
-          <div class="queen-board-wrap">
-            <div class="queen-board" id="queenBoard" aria-label="Interactive 4 queen board"></div>
-          </div>
-          <div class="controls">
-            <button id="queenPrev" type="button">Previous square</button>
-            <button id="queenNext" type="button">Next square</button>
-            <button class="primary" id="queenReset" type="button">Reset to o 4 4</button>
-          </div>
-        </section>
-
-        <section class="panel">
-          <h2>4 Queen Debug</h2>
-          <div class="stats">
-            <div class="stat"><strong id="queenAction">o 4 4</strong><span>action string</span></div>
-            <div class="stat"><strong id="queenIndexes">i=3 j=3</strong><span>queen indexes</span></div>
-            <div class="stat"><strong id="queenSelected">l=3 k=3</strong><span>checked square</span></div>
-          </div>
-          <div class="debug-grid">
-            <pre id="queenMatrix"></pre>
-            <pre id="queenReason"></pre>
-          </div>
-          <div class="notes">
-            <div class="note"><strong><code>1</code> Queen</strong>The selected action places one queen.</div>
-            <div class="note"><strong><code>2</code> Attacked</strong>Same row, same column, or same diagonal.</div>
-            <div class="note"><strong><code>0</code> Safe</strong>No attack condition matched.</div>
-          </div>
-        </section>
-      </div>
-    </section>
-
-    <section class="lesson" id="hanoiLesson">
-      <div class="workspace">
-        <section class="panel">
-          <div class="hanoi-board" id="hanoiBoard" aria-label="Tower of Hanoi board">
-            <div class="tower" data-tower="0" aria-label="Tower 1"></div>
-            <div class="tower" data-tower="1" aria-label="Tower 2"></div>
-            <div class="tower" data-tower="2" aria-label="Tower 3"></div>
-          </div>
-          <div class="controls">
-            <button class="primary" id="hanoiStep" type="button">Next Correct Move</button>
-            <button id="hanoiReset" type="button">Reset</button>
-          </div>
-          <div class="status" id="hanoiStatus">Pick tower 1 first. Only disk 1 can move because it is the smallest disk on top.</div>
-        </section>
-
-        <section class="panel">
-          <h2>Hanoi Debug</h2>
-          <div class="debug-grid">
-            <pre id="hanoiStateDebug"></pre>
-            <pre id="hanoiMoveDebug"></pre>
-          </div>
-          <div class="notes">
-            <div class="note"><strong><code>i</code></strong>Source tower from the action.</div>
-            <div class="note"><strong><code>j</code></strong>Destination tower from the action.</div>
-            <div class="note"><strong><code>l</code></strong>Loop variable checking towers 1, 2, and 3.</div>
-          </div>
-        </section>
-      </div>
-    </section>
-  </main>
+  <iframe class="viewer active" id="queenFrame" src="4_queen_visual_logic.html" title="Interactive 4 Queen Logic"></iframe>
+  <iframe class="viewer" id="hanoiFrame" src="hanoi_visualizer.html" title="Tower of Hanoi Visualizer"></iframe>
 
   <script>
-    document.querySelectorAll(".tab").forEach((button) => {
-      button.addEventListener("click", () => {
-        document.querySelectorAll(".tab").forEach((tab) => tab.classList.remove("active"));
-        document.querySelectorAll(".lesson").forEach((lesson) => lesson.classList.remove("active"));
-        button.classList.add("active");
-        document.getElementById(`${button.dataset.tab}Lesson`).classList.add("active");
-      });
-    });
+    const tabs = Array.from(document.querySelectorAll(".tab"));
+    const frames = {
+      queen: document.getElementById("queenFrame"),
+      hanoi: document.getElementById("hanoiFrame")
+    };
 
-    const queenBoard = document.getElementById("queenBoard");
-    const queenAction = document.getElementById("queenAction");
-    const queenIndexes = document.getElementById("queenIndexes");
-    const queenSelected = document.getElementById("queenSelected");
-    const queenMatrix = document.getElementById("queenMatrix");
-    const queenReason = document.getElementById("queenReason");
-    const queenSquares = [];
-    let queenRow = 3;
-    let queenCol = 3;
-    let selectedQueenRow = 3;
-    let selectedQueenCol = 3;
+    function showVisualizer(target) {
+      const selected = frames[target] ? target : "queen";
 
-    function addQueenLabel(text) {
-      const label = document.createElement("div");
-      label.className = "queen-label";
-      label.textContent = text;
-      queenBoard.appendChild(label);
-    }
-
-    function addQueenSquare(row, col) {
-      const square = document.createElement("button");
-      square.type = "button";
-      square.className = ((row + col) % 2 === 0 ? "queen-light" : "queen-dark") + " queen-square";
-      square.dataset.row = row;
-      square.dataset.col = col;
-      square.addEventListener("click", () => {
-        queenRow = row;
-        queenCol = col;
-        selectedQueenRow = row;
-        selectedQueenCol = col;
-        renderQueens();
-      });
-      square.addEventListener("mouseenter", () => {
-        selectedQueenRow = row;
-        selectedQueenCol = col;
-        renderQueens();
-      });
-      queenBoard.appendChild(square);
-      queenSquares.push(square);
-    }
-
-    function buildQueenBoard() {
-      for (let row = 0; row < 4; row += 1) {
-        addQueenLabel(String(row + 1));
-        for (let col = 0; col < 4; col += 1) {
-          addQueenSquare(row, col);
-        }
-      }
-
-      const corner = document.createElement("div");
-      corner.className = "queen-corner";
-      queenBoard.appendChild(corner);
-
-      for (let col = 0; col < 4; col += 1) {
-        addQueenLabel(String(col + 1));
-      }
-    }
-
-    function queenValue(row, col) {
-      if (row === queenRow && col === queenCol) {
-        return 1;
-      }
-
-      if (row === queenRow || col === queenCol || Math.abs(queenRow - row) === Math.abs(queenCol - col)) {
-        return 2;
-      }
-
-      return 0;
-    }
-
-    function queenReasonText(row, col) {
-      if (row === queenRow && col === queenCol) {
-        return `if l == i and k == j:
-  new_state[l][k] = 1
-
-This is the queen square.
-l=${row}, i=${queenRow}
-k=${col}, j=${queenCol}`;
-      }
-
-      const reasons = [];
-      if (row === queenRow) {
-        reasons.push("same row: l == i");
-      }
-      if (col === queenCol) {
-        reasons.push("same column: k == j");
-      }
-      if (Math.abs(queenRow - row) === Math.abs(queenCol - col)) {
-        reasons.push("same diagonal: abs(i-l) == abs(j-k)");
-      }
-
-      if (reasons.length > 0) {
-        return `elif row/column/diagonal:
-  new_state[l][k] = 2
-
-This square is attacked because:
-${reasons.map((reason) => `- ${reason}`).join("\n")}`;
-      }
-
-      return `else:
-  leave it as 0
-
-This square is still safe.
-It is not same row, same column,
-or same diagonal.`;
-    }
-
-    function queenMatrixText() {
-      const rows = [];
-      for (let row = 0; row < 4; row += 1) {
-        const values = [];
-        for (let col = 0; col < 4; col += 1) {
-          values.push(queenValue(row, col));
-        }
-        rows.push(`(${values.join(", ")})`);
-      }
-      return `state after result(my_state, "${queenAction.textContent}"):\n\n(${rows.join(",\n ")})`;
-    }
-
-    function renderQueens() {
-      queenSquares.forEach((square) => {
-        const row = Number(square.dataset.row);
-        const col = Number(square.dataset.col);
-        const value = queenValue(row, col);
-        square.className = ((row + col) % 2 === 0 ? "queen-light" : "queen-dark") + " queen-square";
-        square.innerHTML = value === 0 ? "" : `<span>${value}</span>`;
-        if (value === 1) {
-          square.classList.add("queen");
-        } else if (value === 2) {
-          square.classList.add("attack");
-        }
-        if (row === selectedQueenRow && col === selectedQueenCol) {
-          square.classList.add("selected");
-        }
+      tabs.forEach((tab) => {
+        const isActive = tab.dataset.target === selected;
+        tab.classList.toggle("active", isActive);
+        tab.setAttribute("aria-selected", String(isActive));
       });
 
-      queenAction.textContent = `o ${queenRow + 1} ${queenCol + 1}`;
-      queenIndexes.textContent = `i=${queenRow} j=${queenCol}`;
-      queenSelected.textContent = `l=${selectedQueenRow} k=${selectedQueenCol}`;
-      queenMatrix.textContent = queenMatrixText();
-      queenReason.textContent = queenReasonText(selectedQueenRow, selectedQueenCol);
-    }
-
-    function moveQueenSelection(direction) {
-      let position = selectedQueenRow * 4 + selectedQueenCol;
-      position = (position + direction + 16) % 16;
-      selectedQueenRow = Math.floor(position / 4);
-      selectedQueenCol = position % 4;
-      renderQueens();
-    }
-
-    document.getElementById("queenPrev").addEventListener("click", () => moveQueenSelection(-1));
-    document.getElementById("queenNext").addEventListener("click", () => moveQueenSelection(1));
-    document.getElementById("queenReset").addEventListener("click", () => {
-      queenRow = 3;
-      queenCol = 3;
-      selectedQueenRow = 3;
-      selectedQueenCol = 3;
-      renderQueens();
-    });
-
-    const hanoiTowers = [
-      [3, 2, 1],
-      [],
-      []
-    ];
-    const hanoiSolution = [
-      [0, 2],
-      [0, 1],
-      [2, 1],
-      [0, 2],
-      [1, 0],
-      [1, 2],
-      [0, 2]
-    ];
-    let selectedTower = null;
-    let hanoiMoves = 0;
-    let hanoiSolutionIndex = 0;
-    let hanoiLastDebug = "No move yet. The starting state is ready.";
-    const hanoiStatus = document.getElementById("hanoiStatus");
-    const hanoiStateDebug = document.getElementById("hanoiStateDebug");
-    const hanoiMoveDebug = document.getElementById("hanoiMoveDebug");
-
-    function topDisk(towerIndex) {
-      const tower = hanoiTowers[towerIndex];
-      return tower[tower.length - 1];
-    }
-
-    function canMoveDisk(from, to) {
-      const moving = topDisk(from);
-      const target = topDisk(to);
-      return moving !== undefined && (target === undefined || moving < target);
-    }
-
-    function pythonSet(tower) {
-      if (tower.length === 0) {
-        return "set()";
-      }
-
-      return `{${[...tower].sort((a, b) => a - b).join(", ")}}`;
-    }
-
-    function pythonHanoiState() {
-      return `[${hanoiTowers.map(pythonSet).join(", ")}]`;
-    }
-
-    function hanoiActions() {
-      const actions = [];
-      for (let i = 0; i < 3; i += 1) {
-        for (let j = 0; j < 3; j += 1) {
-          if (i !== j && canMoveDisk(i, j)) {
-            actions.push(`o ${i + 1} ${j + 1} ${topDisk(i)}`);
-          }
-        }
-      }
-      return actions;
-    }
-
-    function setHanoiStatus(message, type) {
-      hanoiStatus.textContent = message;
-      hanoiStatus.className = "status";
-      if (type) {
-        hanoiStatus.classList.add(type);
-      }
-    }
-
-    function renderHanoi() {
-      document.querySelectorAll(".tower").forEach((towerEl) => {
-        const towerIndex = Number(towerEl.dataset.tower);
-        towerEl.innerHTML = "";
-        towerEl.classList.toggle("selected", selectedTower === towerIndex);
-
-        [...hanoiTowers[towerIndex]].reverse().forEach((disk) => {
-          const diskEl = document.createElement("div");
-          diskEl.className = `disk size-${disk}`;
-          diskEl.textContent = disk;
-          towerEl.appendChild(diskEl);
-        });
-
-        const label = document.createElement("div");
-        label.className = "tower-name";
-        label.textContent = `Tower ${towerIndex + 1}`;
-        towerEl.appendChild(label);
+      Object.entries(frames).forEach(([name, frame]) => {
+        frame.classList.toggle("active", name === selected);
       });
 
-      const actions = hanoiActions();
-      hanoiStateDebug.textContent = `state = ${pythonHanoiState()}
-
-actions(state) returns:
-${actions.length ? actions.map((action) => `  ${action}`).join("\n") : "  no actions"}
-
-goal state:
-  [set(), set(), {1, 2, 3}]
-
-moves = ${hanoiMoves}`;
-      hanoiMoveDebug.textContent = hanoiLastDebug;
+      document.title = selected === "hanoi"
+        ? "Tower of Hanoi Visualizer"
+        : "Interactive 4 Queen Logic";
+      history.replaceState(null, "", `#${selected}`);
     }
 
-    function moveHanoiDisk(from, to) {
-      const disk = hanoiTowers[from].pop();
-      hanoiTowers[to].push(disk);
-      hanoiMoves += 1;
-      selectedTower = null;
-      hanoiLastDebug = `action = "o ${from + 1} ${to + 1} ${disk}"
-
-i = ${from + 1}  source tower
-j = ${to + 1}  destination tower
-k = ${disk}  disk being moved
-
-for l in range(1, 4):
-  if l == j:
-    add disk ${disk} to tower ${to + 1}
-  else:
-    remove disk ${disk} from tower l
-
-new_state = ${pythonHanoiState()}`;
-      renderHanoi();
-      if (hanoiTowers[2].length === 3) {
-        setHanoiStatus("Solved. All disks are now on tower 3.", "good");
-      } else {
-        setHanoiStatus(`Moved disk ${disk} from tower ${from + 1} to tower ${to + 1}.`, "good");
-      }
-    }
-
-    function selectHanoiTower(towerIndex) {
-      if (selectedTower === null) {
-        if (topDisk(towerIndex) === undefined) {
-          hanoiLastDebug = `chosen tower = ${towerIndex + 1}
-
-No action is created.
-Reason: this tower is empty.`;
-          renderHanoi();
-          setHanoiStatus("That tower is empty, so there is no disk to pick up.", "bad");
-          return;
-        }
-
-        selectedTower = towerIndex;
-        hanoiLastDebug = `selected tower = ${towerIndex + 1}
-top disk = ${topDisk(towerIndex)}
-
-Now choose a destination tower.`;
-        renderHanoi();
-        setHanoiStatus(`Picked tower ${towerIndex + 1}. Disk ${topDisk(towerIndex)} is ready to move.`);
-        return;
-      }
-
-      if (selectedTower === towerIndex) {
-        selectedTower = null;
-        hanoiLastDebug = "Selection cleared. No action was applied.";
-        renderHanoi();
-        setHanoiStatus("Selection cleared.");
-        return;
-      }
-
-      if (!canMoveDisk(selectedTower, towerIndex)) {
-        const moving = topDisk(selectedTower);
-        const target = topDisk(towerIndex);
-        hanoiLastDebug = `tried action = "o ${selectedTower + 1} ${towerIndex + 1} ${moving}"
-
-Blocked by actions(state).
-Reason: disk ${moving} cannot go on smaller disk ${target}.`;
-        selectedTower = null;
-        renderHanoi();
-        setHanoiStatus(`Illegal move: disk ${moving} cannot go on top of smaller disk ${target}.`, "bad");
-        return;
-      }
-
-      moveHanoiDisk(selectedTower, towerIndex);
-    }
-
-    document.getElementById("hanoiBoard").addEventListener("click", (event) => {
-      const tower = event.target.closest(".tower");
-      if (tower) {
-        selectHanoiTower(Number(tower.dataset.tower));
-      }
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", () => showVisualizer(tab.dataset.target));
     });
 
-    document.getElementById("hanoiStep").addEventListener("click", () => {
-      if (hanoiSolutionIndex >= hanoiSolution.length) {
-        setHanoiStatus("The puzzle is already solved.", "good");
-        return;
-      }
-
-      const [from, to] = hanoiSolution[hanoiSolutionIndex];
-      if (canMoveDisk(from, to)) {
-        moveHanoiDisk(from, to);
-        hanoiSolutionIndex += 1;
-      }
-    });
-
-    document.getElementById("hanoiReset").addEventListener("click", () => {
-      hanoiTowers[0] = [3, 2, 1];
-      hanoiTowers[1] = [];
-      hanoiTowers[2] = [];
-      selectedTower = null;
-      hanoiMoves = 0;
-      hanoiSolutionIndex = 0;
-      hanoiLastDebug = "No move yet. The starting state is ready.";
-      renderHanoi();
-      setHanoiStatus("Pick tower 1 first. Only disk 1 can move because it is the smallest disk on top.");
-    });
-
-    buildQueenBoard();
-    renderQueens();
-    renderHanoi();
+    showVisualizer(location.hash.replace("#", ""));
   </script>
 </body>
 </html>

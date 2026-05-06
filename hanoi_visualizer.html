@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tower of Hanoi Visualizer</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --ink: #1d2433;
+      --muted: #657189;
+      --line: #d8deea;
+      --accent: #2563eb;
+      --accent-dark: #1747b8;
+      --bad: #c2410c;
+      --good: #15803d;
+      --wood: #8b5e34;
+      --tower: #4b5563;
+      --disk1: #e84a5f;
+      --disk2: #f59e0b;
+      --disk3: #14b8a6;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    main {
+      width: min(1080px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 36px;
+    }
+
+    header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 30px;
+      line-height: 1.1;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.5;
+      max-width: 640px;
+    }
+
+    .counter {
+      min-width: 130px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      text-align: center;
+    }
+
+    .counter strong {
+      display: block;
+      font-size: 26px;
+    }
+
+    .counter span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .board {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+      min-height: 360px;
+      padding: 22px 22px 28px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 16px 45px rgba(30, 41, 59, 0.08);
+    }
+
+    .tower {
+      position: relative;
+      display: flex;
+      min-width: 0;
+      min-height: 300px;
+      align-items: center;
+      justify-content: flex-end;
+      flex-direction: column;
+      padding: 0 8px 22px;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .tower:hover {
+      border-color: #b8c4da;
+      background: #f8fafc;
+    }
+
+    .tower.selected {
+      border-color: var(--accent);
+      background: #eff6ff;
+    }
+
+    .tower::before {
+      content: "";
+      position: absolute;
+      bottom: 58px;
+      left: 50%;
+      width: 14px;
+      height: 205px;
+      transform: translateX(-50%);
+      border-radius: 7px 7px 0 0;
+      background: var(--tower);
+    }
+
+    .tower::after {
+      content: "";
+      position: absolute;
+      right: 12%;
+      bottom: 44px;
+      left: 12%;
+      height: 18px;
+      border-radius: 8px;
+      background: var(--wood);
+    }
+
+    .disk {
+      position: relative;
+      z-index: 1;
+      height: 34px;
+      margin-bottom: 5px;
+      border-radius: 8px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+      box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.14);
+      user-select: none;
+    }
+
+    .disk.size-1 {
+      width: 34%;
+      background: var(--disk1);
+    }
+
+    .disk.size-2 {
+      width: 54%;
+      background: var(--disk2);
+    }
+
+    .disk.size-3 {
+      width: 76%;
+      background: var(--disk3);
+    }
+
+    .tower-name {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    button {
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--ink);
+      font: inherit;
+      font-weight: 700;
+      padding: 0 14px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      border-color: #9aa8c1;
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    button.primary:hover {
+      background: var(--accent-dark);
+    }
+
+    .status {
+      min-height: 48px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .status.good {
+      border-color: #86efac;
+      color: var(--good);
+      background: #f0fdf4;
+    }
+
+    .status.bad {
+      border-color: #fdba74;
+      color: var(--bad);
+      background: #fff7ed;
+    }
+
+    .debug {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .debug-panel {
+      min-width: 0;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #101827;
+      color: #dbeafe;
+    }
+
+    .debug-panel h2 {
+      margin: 0 0 10px;
+      color: #ffffff;
+      font-size: 16px;
+      line-height: 1.2;
+    }
+
+    pre {
+      min-height: 168px;
+      margin: 0;
+      padding: 12px;
+      overflow-x: auto;
+      border-radius: 6px;
+      background: #070b14;
+      color: #bfdbfe;
+      font-size: 13px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+
+    code {
+      font-family: Consolas, Monaco, "Courier New", monospace;
+    }
+
+    .logic {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .rule {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .rule strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 15px;
+    }
+
+    .rule p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 760px) {
+      header {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .counter {
+        width: 100%;
+      }
+
+      .board {
+        gap: 8px;
+        padding: 14px 8px 24px;
+      }
+
+      .tower {
+        min-height: 260px;
+        padding-inline: 3px;
+      }
+
+      .tower::before {
+        height: 175px;
+      }
+
+      .disk {
+        height: 31px;
+        font-size: 13px;
+      }
+
+      .disk.size-1 {
+        width: 46%;
+      }
+
+      .disk.size-2 {
+        width: 66%;
+      }
+
+      .disk.size-3 {
+        width: 88%;
+      }
+
+      .logic {
+        grid-template-columns: 1fr;
+      }
+
+      .debug {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>Tower of Hanoi</h1>
+        <p class="subtitle">Move all three disks from tower 1 to tower 3. Click a tower to pick up its top disk, then click another tower to place it.</p>
+      </div>
+      <div class="counter">
+        <strong id="moveCount">0</strong>
+        <span>moves</span>
+      </div>
+    </header>
+
+    <section class="board" id="board" aria-label="Tower of Hanoi board">
+      <div class="tower" data-tower="0" aria-label="Tower 1"></div>
+      <div class="tower" data-tower="1" aria-label="Tower 2"></div>
+      <div class="tower" data-tower="2" aria-label="Tower 3"></div>
+    </section>
+
+    <div class="controls">
+      <button class="primary" id="autoStep">Next Correct Move</button>
+      <button id="reset">Reset</button>
+    </div>
+
+    <div class="status" id="status">Pick tower 1 first. Only disk 1 can move because it is the smallest disk on top.</div>
+
+    <section class="debug" aria-label="Code debug view">
+      <div class="debug-panel">
+        <h2>Current State</h2>
+        <pre id="stateDebug"></pre>
+      </div>
+      <div class="debug-panel">
+        <h2>Move Debug</h2>
+        <pre id="moveDebug"></pre>
+      </div>
+    </section>
+
+    <section class="logic" aria-label="Rules">
+      <div class="rule">
+        <strong>State in Python</strong>
+        <p><code>[{1, 2, 3}, set(), set()]</code> means all disks start on tower 1.</p>
+      </div>
+      <div class="rule">
+        <strong>Top Disk</strong>
+        <p>The smallest number on a tower is the disk you are allowed to move.</p>
+      </div>
+      <div class="rule">
+        <strong>Legal Move</strong>
+        <p>A disk can move only onto an empty tower or onto a bigger disk.</p>
+      </div>
+      <div class="rule">
+        <strong>result() Variables</strong>
+        <p><code>j</code> is the destination tower. <code>l</code> loops through tower 1, tower 2, and tower 3 to update each one.</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const towers = [
+      [3, 2, 1],
+      [],
+      []
+    ];
+
+    const solution = [
+      [0, 2],
+      [0, 1],
+      [2, 1],
+      [0, 2],
+      [1, 0],
+      [1, 2],
+      [0, 2]
+    ];
+
+    let selectedTower = null;
+    let moves = 0;
+    let solutionIndex = 0;
+
+    const board = document.getElementById("board");
+    const moveCount = document.getElementById("moveCount");
+    const status = document.getElementById("status");
+    const autoStep = document.getElementById("autoStep");
+    const reset = document.getElementById("reset");
+    const stateDebug = document.getElementById("stateDebug");
+    const moveDebug = document.getElementById("moveDebug");
+
+    let lastDebugMessage = "No move yet. The starting state is ready.";
+
+    function topDisk(towerIndex) {
+      const tower = towers[towerIndex];
+      return tower[tower.length - 1];
+    }
+
+    function canMove(from, to) {
+      const moving = topDisk(from);
+      const target = topDisk(to);
+      return moving !== undefined && (target === undefined || moving < target);
+    }
+
+    function pythonSet(tower) {
+      if (tower.length === 0) {
+        return "set()";
+      }
+
+      const sorted = [...tower].sort((a, b) => a - b);
+      return `{${sorted.join(", ")}}`;
+    }
+
+    function pythonState() {
+      return `[${towers.map(pythonSet).join(", ")}]`;
+    }
+
+    function availableActions() {
+      const actions = [];
+
+      for (let i = 0; i < 3; i += 1) {
+        for (let j = 0; j < 3; j += 1) {
+          if (i !== j && canMove(i, j)) {
+            actions.push(`o ${i + 1} ${j + 1} ${topDisk(i)}`);
+          }
+        }
+      }
+
+      return actions;
+    }
+
+    function updateDebug() {
+      const actions = availableActions();
+
+      stateDebug.textContent =
+`state = ${pythonState()}
+
+actions(state) returns:
+${actions.length ? actions.map((action) => `  ${action}`).join("\n") : "  no actions"}
+
+goal state:
+  [set(), set(), {1, 2, 3}]`;
+
+      moveDebug.textContent = lastDebugMessage;
+    }
+
+    function render() {
+      document.querySelectorAll(".tower").forEach((towerEl) => {
+        const towerIndex = Number(towerEl.dataset.tower);
+        towerEl.innerHTML = "";
+        towerEl.classList.toggle("selected", selectedTower === towerIndex);
+
+        [...towers[towerIndex]].reverse().forEach((disk) => {
+          const diskEl = document.createElement("div");
+          diskEl.className = `disk size-${disk}`;
+          diskEl.textContent = disk;
+          towerEl.appendChild(diskEl);
+        });
+
+        const label = document.createElement("div");
+        label.className = "tower-name";
+        label.textContent = `Tower ${towerIndex + 1}`;
+        towerEl.appendChild(label);
+      });
+
+      moveCount.textContent = moves;
+      updateDebug();
+    }
+
+    function setStatus(message, type) {
+      status.textContent = message;
+      status.className = "status";
+      if (type) {
+        status.classList.add(type);
+      }
+    }
+
+    function moveDisk(from, to) {
+      const disk = towers[from].pop();
+      towers[to].push(disk);
+      moves += 1;
+      selectedTower = null;
+      lastDebugMessage =
+`action = "o ${from + 1} ${to + 1} ${disk}"
+
+i = ${from + 1}  source tower
+j = ${to + 1}  destination tower
+k = ${disk}  disk being moved
+
+result(state, action):
+  for l in range(1, 4):
+    if l == j:
+      add disk ${disk} to tower ${to + 1}
+    else:
+      remove disk ${disk} from tower l
+
+Meaning of l:
+  l = 1 checks tower 1
+  l = 2 checks tower 2
+  l = 3 checks tower 3
+
+new_state = ${pythonState()}`;
+      render();
+
+      if (towers[2].length === 3) {
+        setStatus("Solved. All disks are now on tower 3.", "good");
+      } else {
+        setStatus(`Moved disk ${disk} from tower ${from + 1} to tower ${to + 1}.`, "good");
+      }
+    }
+
+    function selectTower(towerIndex) {
+      if (selectedTower === null) {
+        if (topDisk(towerIndex) === undefined) {
+          lastDebugMessage =
+`chosen tower = ${towerIndex + 1}
+
+No action is created.
+Reason: this tower is empty.`;
+          updateDebug();
+          setStatus("That tower is empty, so there is no disk to pick up.", "bad");
+          return;
+        }
+
+        selectedTower = towerIndex;
+        lastDebugMessage =
+`selected tower = ${towerIndex + 1}
+top disk = ${topDisk(towerIndex)}
+
+Now choose a destination tower.`;
+        render();
+        setStatus(`Picked tower ${towerIndex + 1}. Disk ${topDisk(towerIndex)} is ready to move.`);
+        return;
+      }
+
+      if (selectedTower === towerIndex) {
+        selectedTower = null;
+        lastDebugMessage = "Selection cleared. No action was applied.";
+        render();
+        setStatus("Selection cleared.");
+        return;
+      }
+
+      if (!canMove(selectedTower, towerIndex)) {
+        const moving = topDisk(selectedTower);
+        const target = topDisk(towerIndex);
+        lastDebugMessage =
+`tried action = "o ${selectedTower + 1} ${towerIndex + 1} ${moving}"
+
+Blocked by actions(state).
+Reason: disk ${moving} is bigger than disk ${target}.
+
+Rule check:
+  moving disk < target disk
+  ${moving} < ${target} is false`;
+        setStatus(`Illegal move: disk ${moving} cannot go on top of smaller disk ${target}.`, "bad");
+        selectedTower = null;
+        render();
+        return;
+      }
+
+      moveDisk(selectedTower, towerIndex);
+    }
+
+    function nextCorrectMove() {
+      if (solutionIndex >= solution.length) {
+        setStatus("The puzzle is already solved.", "good");
+        return;
+      }
+
+      const [from, to] = solution[solutionIndex];
+      if (canMove(from, to)) {
+        moveDisk(from, to);
+        solutionIndex += 1;
+      }
+    }
+
+    function resetBoard() {
+      towers[0] = [3, 2, 1];
+      towers[1] = [];
+      towers[2] = [];
+      selectedTower = null;
+      moves = 0;
+      solutionIndex = 0;
+      lastDebugMessage = "No move yet. The starting state is ready.";
+      render();
+      setStatus("Pick tower 1 first. Only disk 1 can move because it is the smallest disk on top.");
+    }
+
+    board.addEventListener("click", (event) => {
+      const tower = event.target.closest(".tower");
+      if (tower) {
+        selectTower(Number(tower.dataset.tower));
+      }
+    });
+
+    autoStep.addEventListener("click", nextCorrectMove);
+    reset.addEventListener("click", resetBoard);
+
+    render();
+  </script>
+</body>
+</html>
